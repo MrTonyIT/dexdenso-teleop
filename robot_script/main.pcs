@@ -1,0 +1,66 @@
+'!TITLE "Zero-Lag Webcam Teleoperation Bridge"
+
+Sub Main
+    Dim recvStr As String
+    Dim parts As Variant
+    Dim targetPos As Position
+    Dim gripVal As Integer
+    Dim lastGrip As Integer
+    
+    TakeArm Keep = 1
+    Motor On
+    
+    ExtSpeed 100, 100
+    Speed 100
+    Accel 100, 100
+    HighPathAccuracy False
+    
+    ' Move to Safe Home Position
+    targetPos = P(425.0, 0.0, 325.0, 180.0, 0.0, 0.0, 5)
+    Move P, @E targetPos
+    
+    lastGrip = -1
+    
+    ' Line 4 is RC8 Ethernet Server 1
+    On Error Goto ErrHandler
+    Comm.Open 4
+    Comm.Clear 4
+    
+    Do
+        ' Check if client connected (State = 2)
+        If Comm.State(4) = 2 Then
+            recvStr = Comm.Input(4, 50)
+            If Len(recvStr) > 0 Then
+                parts = Split(recvStr, ",")
+                If UBound(parts) >= 6 Then
+                    targetPos = P(Val(parts(0)), Val(parts(1)), Val(parts(2)), Val(parts(3)), Val(parts(4)), Val(parts(5)), 5)
+                    gripVal = CInt(Val(parts(6)))
+                    
+                    ' Update Gripper IO
+                    If gripVal <> lastGrip Then
+                        If gripVal = 1 Then
+                            Set IO[128]
+                        Else
+                            Reset IO[128]
+                        End If
+                        lastGrip = gripVal
+                    End If
+                    
+                    ' Smooth Motion Buffer Control
+                    If CurDist > 25.0 Then
+                        Wait (CurDist <= 25.0) Or (MotionComplete = 1)
+                    End If
+                    
+                    Move P, @P targetPos, Next
+                End If
+            End If
+        End If
+        Delay 5
+    Loop
+
+ErrHandler:
+    Hold
+    Reset IO[128]
+    Comm.Close 4
+    GiveArm
+End Sub

@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dexdenso-teleop"
+version = "1.0.0"
+description = "High-Precision Zero-Latency 6-DOF Vision Teleoperation & Digital Twin Framework for DENSO Industrial Robotics and NVIDIA Isaac Sim"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Tony Nguyen", email = "contact@mrtony.dev" }
+]
+keywords = [
+    "robotics",
+    "teleoperation",
+    "denso-robotics",
+    "isaac-sim",
+    "digital-twin",
+    "computer-vision",
+    "mediapipe",
+    "inverse-kinematics",
+    "wincaps-iii",
+    "industrial-automation"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Human Machine Interfaces",
+    "Topic :: Scientific/Engineering :: Robotics",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
+]
+dependencies = [
+    "opencv-python>=4.8.0",
+    "mediapipe>=0.10.0",
+    "numpy>=1.24.0",
+    "python-dotenv>=1.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "flake8>=6.1.0",
+    "black>=23.7.0"
+]
+
+[project.scripts]
+dexdenso = "main:main"
+dexdenso-mock = "mock_rc8_server:main"
+
+[tool.setuptools]
+py-modules = [
+    "main",
+    "vision_tracker",
+    "kinematics_mapper",
+    "wincaps_bridge",
+    "isaac_teleop_bridge",
+    "mock_rc8_server"
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["."]
+python_files = ["test_*.py"]

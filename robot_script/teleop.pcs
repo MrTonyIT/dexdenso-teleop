@@ -1,0 +1,82 @@
+'!TITLE "DexDenso Teleoperation Bridge - Real-Time Robot Receiver"
+
+Sub Main
+    Dim recvStr As String
+    Dim parts As Variant
+    Dim targetPos As Position
+    Dim targetJoint As Joint
+    Dim gripVal As Integer
+    Dim lastGrip As Integer
+    
+    TakeArm Keep = 1
+    Motor On
+    
+    ExtSpeed 100
+    Speed 100
+    Accel 100
+    HighPathAccuracy False
+    
+    ' Move to Safe Home Position
+    targetPos = P(425.0, 0.0, 325.0, 180.0, 0.0, 0.0, 5)
+    Move P, @E targetPos
+    
+    lastGrip = -1
+    
+    ' Protect against any execution halt
+    On Error Resume Next
+    
+    ' Line 4 is RC8 Ethernet Server 1
+    Comm.Open 4
+    Comm.Clear 4
+    
+    Do
+        ' Auto-reopen if port was closed
+        If Comm.State(4) = 0 Then
+            Comm.Open 4
+            Comm.Clear 4
+        End If
+        
+        ' Check if client is connected (State = 2)
+        If Comm.State(4) = 2 Then
+            ' Clear stale backlog buffer to enforce 0ms latency
+            If Comm.Count(4) > 50 Then
+                Comm.Clear 4
+            End If
+            
+            ' Read newest packet with non-blocking 0ms timeout
+            If Comm.Count(4) > 0 Then
+                recvStr = Comm.Input(4, 0)
+                If Len(recvStr) > 0 Then
+                    parts = Split(recvStr, ",")
+                    If UBound(parts) >= 6 Then
+                        gripVal = Val(parts(6))
+                        
+                        ' Update Gripper IO immediately
+                        If gripVal <> lastGrip Then
+                            If gripVal = 1 Then
+                                Set IO[128]
+                            Else
+                                Reset IO[128]
+                            End If
+                            lastGrip = gripVal
+                        End If
+                        
+                        ' Distinguish Joint mode (J1..J6) vs Cartesian mode (X,Y,Z,Rx,Ry,Rz)
+                        If Val(parts(2)) > 180 Then
+                            ' Cartesian Mode
+                            targetPos = P(Val(parts(0)), Val(parts(1)), Val(parts(2)), Val(parts(3)), Val(parts(4)), Val(parts(5)), 5)
+                            If Dist(CurPos, targetPos) > 0.4 Or Abs(PosRz(CurPos) - PosRz(targetPos)) > 1.0 Then
+                                Move P, @P targetPos, Next
+                            End If
+                        Else
+                            ' Joint Direct Mode (0ms latency)
+                            targetJoint = J(Val(parts(0)), Val(parts(1)), Val(parts(2)), Val(parts(3)), Val(parts(4)), Val(parts(5)))
+                            Move J, @P targetJoint, Next
+                        End If
+                    End If
+                End If
+            End If
+        End If
+        Delay 1
+    Loop
+End Sub
