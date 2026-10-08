@@ -55,26 +55,26 @@
 
 ```mermaid
 flowchart TD
-    subgraph Vision Pipeline ["Perception Layer (60 FPS)"]
-        Cam["DirectShow Web Camera"] -->|Zero-Lag Thread| Stream["ThreadedCamera Stream"]
-        Stream -->|RGB Frame| MP["MediaPipe HandLandmarker"]
-        MP -->|21 3D Landmarks| Filt["Adaptive OneEuroFilter Engine"]
-        Filt -->|De-jittered Trajectory| State["Gesture & Pinch Classifier"]
+    subgraph Vision_Layer["Perception Layer (60 FPS)"]
+        Cam["DirectShow Web Camera"] -->|"Zero-Lag Thread"| Stream["ThreadedCamera Stream"]
+        Stream -->|"RGB Frame"| MP["MediaPipe HandLandmarker"]
+        MP -->|"21 3D Landmarks"| Filt["Adaptive OneEuroFilter Engine"]
+        Filt -->|"De-jittered Trajectory"| State["Gesture & Pinch Classifier"]
     end
 
-    subgraph Kinematics Core ["Kinematics & Safety Layer"]
+    subgraph Kinematics_Layer["Kinematics & Safety Layer"]
         State --> IK["Analytical 6-DOF IK Solver (VS-6577)"]
         IK --> Bound["Safety Bounding Box & Joint Clamp"]
         Bound --> Deadman["Deadman Switch & Watchdog"]
     end
 
-    subgraph Telemetry Bridge ["Communication Layer"]
+    subgraph Telemetry_Layer["Communication Layer"]
         Deadman --> Wincaps["WincapsBridge Dispatcher"]
-        Wincaps -->|Async TCP (TCP_NODELAY)| RC8["DENSO RC8 / WINCAPS III (Port 49152)"]
-        Wincaps -->|Low-Latency UDP| Isaac["NVIDIA Isaac Sim 4.0+ (Port 5008/5005)"]
+        Wincaps -->|"Async TCP (TCP_NODELAY)"| RC8["DENSO RC8 / WINCAPS III (Port 49152)"]
+        Wincaps -->|"Low-Latency UDP"| Isaac["NVIDIA Isaac Sim 4.0+ (Port 5008/5005)"]
     end
 
-    subgraph Actuation ["Physical & Virtual Execution"]
+    subgraph Actuation_Layer["Physical & Virtual Execution"]
         RC8 --> RobotArm["Physical / Simulated DENSO Robot"]
         Isaac --> USDPhysics["Omniverse USD Physics Drives"]
     end
@@ -101,7 +101,7 @@ sequenceDiagram
         Bridge->>Isaac: UDP Broadcast (Ports 5008 / 5005)
         Isaac->>Isaac: Set UsdPhysics Target Drive Position
     and Industrial Controller Stream
-        Bridge->>RC8: TCP Telemetry Packet (PACScript Input #1)
+        Bridge->>RC8: TCP Telemetry Packet (PACScript Input Protocol)
         RC8->>RC8: Execute Trajectory Interpolation
     end
 ```
