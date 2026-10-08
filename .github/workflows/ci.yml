@@ -33,7 +33,7 @@ jobs:
 
       - name: Syntax & Compilation Validation
         run: |
-          python -m py_compile *.py
+          python -m compileall -q .
 
       - name: Run Test Suite
         run: |
